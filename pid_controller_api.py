@@ -306,6 +306,12 @@ class pid_api():
             DESCRIPTION.
         _period : int
             DESCRIPTION.
+        _u1: float
+            DESCRIPTION.
+        _u2: float
+            DESCRIPTION.
+        _u3: float
+            DESCRIPTION.
 
         """
         self.write('get_all_variables')
@@ -320,7 +326,11 @@ class pid_api():
         _td      = float(raw_params[5]) 
         _period  = float(raw_params[6])
         
-        return _temp, _setpoint, _dac, _band, _ti, _td, _period
+        _u1  = float(raw_params[7])
+        _u2  = float(raw_params[8])
+        _u3  = float(raw_params[9])
+        
+        return _temp, _setpoint, _dac, _band, _ti, _td, _period, _u1, _u2, _u3
         
 def _debug(*a):
     if _debug_enabled:

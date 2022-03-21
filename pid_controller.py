@@ -52,7 +52,7 @@ class pid_controller(_g.BaseObject):
     window_size=[1,1] : list
         Dimensions of the window.
     """
-    def __init__(self, name='Arduino_PID', api_class = pid_api, temperature_limit=100, show=True, block=False, window_size=None):
+    def __init__(self, name='Arduino_PID', api_class = pid_api, temperature_limit=80, show=True, block=False, window_size=None):
         
         if not _mp._serial: _s._warn('You need to install pyserial to use the Arduino based PID temperature controller.')
         
@@ -167,7 +167,7 @@ class pid_controller(_g.BaseObject):
         """
         
         t                        = _time.time()-self.t0
-        T, S, dac_level, P, I, D, period = self.api.get_all_variables()
+        T, S, dac_level, P, I, D, period, u1, u2, u3 = self.api.get_all_variables()
         
         # Convert dac_level to a fraction (based on DAC bit depth)
         output_fraction = dac_level/(2**_dac_bit_depth-1)
@@ -187,8 +187,12 @@ class pid_controller(_g.BaseObject):
         self.number_period      .set_value(period, block_signals=True)
                 
         # Append this to the databox
-        self.plot.append_row([t, T, T-S, 100*output_fraction], ckeys=['Time (s)', 'Temperature (C)', 'Temperature Error (C)', 'DAC Voltage (%)'],)
-        self.plot.plot()        
+        self.plot_main .append_row([t, T, T-S, 100*output_fraction], ckeys=['Time (s)', 'Temperature (C)', 'Temperature Error (C)', 'DAC Voltage (%)'])
+        self.plot_debug.append_row([t,u1, u2, u3], ckeys=['Time (s)', 'u1', 'u2','u3'])
+        
+        # Update the plot
+        self.plot_main .plot()
+        self.plot_debug.plot()          
 
         # Update GUI
         self.window.process_events()
@@ -628,10 +632,21 @@ class pid_controller(_g.BaseObject):
         # New row
         self.grid_bot.new_autorow()
         
+        self.tabs = self.grid_bot.add(_g.TabArea(self.name+'.tabs'), alignment=0)
+        
+        self.tab_main  = self.tabs.add_tab('Main')
+        self.tab_debug = self.tabs.add_tab('Debug')
+        
         ## Make the plotter ##
-        self.plot = self.grid_bot.add(_g.DataboxPlot(
+        self.plot_main = self.tab_main.add(_g.DataboxPlot(
             file_type='*.csv',
-            autosettings_path=self.name+'.plot',
+            autosettings_path=self.name+'.plot_main',
+            delimiter=',', show_logger=True), alignment=0, column_span=10)
+        
+        ## Make the plotter ##
+        self.plot_debug = self.tab_debug.add(_g.DataboxPlot(
+            file_type='*.csv',
+            autosettings_path=self.name+'.plot_debug',
             delimiter=',', show_logger=True), alignment=0, column_span=10)
 
         # Bottom log file controls

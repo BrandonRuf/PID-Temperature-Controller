@@ -137,6 +137,12 @@ void parseData() {
     Serial.print(',');
     Serial.print(t_derivative,4); 
     Serial.print(',');
-    Serial.println(get_period()); 
+    Serial.print(get_period());
+    Serial.print(','); 
+    Serial.print(u1,4); 
+    Serial.print(',');
+    Serial.print(u2,4); 
+    Serial.print(',');
+    Serial.println(u3,4); 
   }
 }

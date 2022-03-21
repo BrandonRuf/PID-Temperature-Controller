@@ -20,6 +20,11 @@ double band        ;   // Proportional band
 double t_integral  ;   // Integral time
 double t_derivative;   // Derivative time
 
+/** User debugging parameters**/
+double u1;  // First user variable
+double u2;  // Second user variable
+double u3;  // Third user variable
+
 /** Timing parameters **/
 unsigned int period;   // Control period (in milliseconds)
 double dt;             // Time step between temperature measurements used in the control loop
@@ -57,7 +62,7 @@ void control(){
    */ 
   
   if (error >= band/2) {
-    set_dac(4095);
+    set_dac(-4095);
   } 
   else if (error < -1*band/2) {
     set_dac(0);
