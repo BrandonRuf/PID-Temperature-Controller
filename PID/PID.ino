@@ -1,7 +1,9 @@
 /*
- * PID temperature controller. 
- * To be run alongside with python GUI <pid_controller.py>, 
+ * PID temperature controller software. 
+ * To be run alongside python GUI <pid_controller.py>, 
  * or API <pid_controller_api.py>. 
+ * 
+ * See a technician for hardware setup and/or issues.
  * 
  * For use in the McGill University physics course PHYS-339.
  * Written by Brandon Ruffolo in 2021-22.
