@@ -1,5 +1,5 @@
 '''
-<pid_controller.py> is a GUI (graphical user intrface) 
+<pid_controller.py> is a GUI (graphical user interface) 
 that wraps the API <pid_controller_api.py>.
 Connects to an Arduino microcontroller running <PID.ino>.
 
