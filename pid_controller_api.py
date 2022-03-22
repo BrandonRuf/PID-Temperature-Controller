@@ -43,7 +43,7 @@ class pid_api():
 
         # Check for installed libraries
         if not _mp._serial:
-            _s._warn('You need to install pyserial to use the Arduino based PID temperature controller.')
+            print('You need to install pyserial to use the Arduino based PID temperature controller.')
             self.simulation = True
             _debug('Simulation enabled.')
 
