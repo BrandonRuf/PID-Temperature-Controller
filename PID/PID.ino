@@ -1,8 +1,11 @@
 /*
- * <PID.ino> to be run with <pid_controller.py>
- * For use in the McGill University physics course PHYS 339.
+ * PID temperature controller. 
+ * To be run alongside with python GUI <pid_controller.py>, 
+ * or API <pid_controller_api.py>. 
+ * 
+ * For use in the McGill University physics course PHYS-339.
  * Written by Brandon Ruffolo in 2021-22.
- * brandon.ruffolo@mcgill.ca
+ * Email: brandon.ruffolo@mcgill.ca
 */
 
 #include <Wire.h>
@@ -10,7 +13,7 @@
 #include <Adafruit_MAX31865.h>
 
 #define BAUD 115200
-#define POLARITY_PIN  6
+#define POLARITY_PIN  8
 
 #define RREF      4300.0  // The value of the Rref resistor in the RTD package.
 #define RNOMINAL  1000.0  // The 'nominal' 0-degrees-C resistance of the sensor

@@ -1,10 +1,11 @@
 '''
-<pid_controller.py> to be run with <pid_controller_api.py>
-Connects to an Arduino microcontroller running <PID.ino>
+<pid_controller.py> is a GUI (graphical user intrface) 
+that wraps the API <pid_controller_api.py>.
+Connects to an Arduino microcontroller running <PID.ino>.
 
-For use in the McGill University physics course PHYS 339.
+For use in the McGill University physics course PHYS-339.
 Written by Brandon Ruffolo in 2021-22.
-brandon.ruffolo@mcgill.ca
+Email: brandon.ruffolo@mcgill.ca
 '''
 
 import mcphysics   as _mp
@@ -49,7 +50,7 @@ class pid_controller(_g.BaseObject):
         Unique name to give this instance, so that its settings will not
         collide with other egg objects.
     
-    temperature_limit=85 : float
+    temperature_limit=80 : float
         Upper limit on the temperature setpoint (C).
     
     show=True : bool

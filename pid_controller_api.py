@@ -1,13 +1,13 @@
 '''
-<pid_controller_api.py>
-For connection to an Arduino microcontroller running <PID.ino>
+<pid_controller_api.py> is an API implementing
+serial communication to an Arduino microcontroller running <PID.ino>.
 
-For use in the McGill University physics course PHYS 339.
+For use in the McGill University physics course PHYS-339.
 Written by Brandon Ruffolo in 2021-22.
-brandon.ruffolo@mcgill.ca
+Email: brandon.ruffolo@mcgill.ca
 '''
 
-import mcphysics   as _mp
+import mcphysics as _mp
 import time as _time
 
 
@@ -27,7 +27,7 @@ class pid_api():
     port='COM3' : str
         Name of the port to connect to.
         
-    baudrate=9600 : int
+    baudrate=115200 : int
         Baud rate of the connection. Must match the instrument setting.
         
     timeout=3000 : number
@@ -37,7 +37,7 @@ class pid_api():
         Upper limit on the temperature setpoint (C).
         
     """
-    def __init__(self, port='COM3', baudrate=9600, timeout=3000, temperature_limit=80):
+    def __init__(self, port='COM3', baudrate=115200, timeout=3000, temperature_limit=80):
 
         self._temperature_limit = temperature_limit        
 
