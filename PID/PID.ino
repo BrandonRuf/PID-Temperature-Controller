@@ -1,9 +1,10 @@
 /*
- * PID temperature controller software. 
+ * <PID.ino> is the main PID temperature controller software. 
+ * To be used with accompanying scripts <get_and_set.ino> 
+ * and <serial_data.ino>. These are appended at compile time.
+ * 
  * To be run alongside python GUI <pid_controller.py>, 
  * or API <pid_controller_api.py>. 
- * 
- * See a technician for hardware setup and/or issues.
  * 
  * For use in the McGill University physics course PHYS-339.
  * Written by Brandon Ruffolo in 2021-22.
