@@ -1,3 +1,10 @@
+/*
+ * <PID.ino> to be run with <pid_controller.py>
+ * For use in the McGill University physics course PHYS 339.
+ * Written by Brandon Ruffolo in 2021-22.
+ * brandon.ruffolo@mcgill.ca
+*/
+
 #include <Wire.h>
 #include <Adafruit_MCP4725.h>
 #include <Adafruit_MAX31865.h>
