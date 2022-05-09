@@ -108,7 +108,7 @@ class pid_controller(_g.BaseObject):
         self.populate_window(ports, default_port, temperature_limit, show, block)
         
         # Create Timer for collecting data 
-        self.timer = _g.Timer(interval_ms=1000, single_shot=False)
+        self.timer = _g.Timer(interval_ms=500, single_shot=False)
         self.timer.signal_tick.connect(self._timer_tick)
 
         # Show the GUI!
@@ -589,46 +589,46 @@ class pid_controller(_g.BaseObject):
         
         
         # Tab for setting the temperature setpoint
-        self.grid_params.add(_g.Label('Setpoint Temperature:'), alignment=1).set_style(style_4)
+        self.grid_params.add(_g.Label('Setpoint Temperature:'), alignment=1).set_style('font-size: 14pt; font-weight: bold; color: cyan')
         self.number_setpoint = self.grid_params.add(_g.NumberBox(
             -273.16, bounds=(-273.16, temperature_limit), suffix='°C',signal_changed = self._number_setpoint_changed,
-            tip = 'Targeted temperature.'), alignment=1).set_width(box_width).set_style(style_4)  
+            tip = 'Targeted temperature.'), alignment=1).set_width(box_width).set_style('font-size: 14pt; font-weight: bold; color: cyan')  
         
         # New row
         self.grid_params.new_autorow()
         
         # Tab for setting the control period
-        self.grid_params.add(_g.Label('Contol Period:'), alignment=1).set_style(style_5)
+        self.grid_params.add(_g.Label('Contol Period:'), alignment=1).set_style('font-size: 14pt; font-weight: bold; color: lavender')
         self.number_period = self.grid_params.add(_g.NumberBox(
             value = 100, suffix = 'ms', bounds = (0,10000), autosettings_path = self.name+'.Period',
             signal_changed = self._number_period_changed,
-            tip = 'Time between calls to the control function.'), alignment=1).set_width(box_width).disable().set_style(style_5)
+            tip = 'Time between calls to the control function.'), alignment=1).set_width(box_width).disable().set_style('font-size: 14pt; font-weight: bold; color: lavender')
 
         # New row
         self.grid_params.new_autorow()
         
         # Tab for monitoring and/or setting the DAC output voltage 
-        self.grid_params.add(_g.Label('DAC output:'), alignment=1).set_style(style_3)
+        self.grid_params.add(_g.Label('DAC output:'), alignment=1).set_style('font-size: 14pt; font-weight: bold; color: '+('pink'))
         self.number_dac = self.grid_params.add(_g.NumberBox(
             value=0.000, suffix='V', decimals = 4, tip='Arduino DAC output to peltier driver (0-5.000 V).',
-            signal_changed = self._number_dac_changed), alignment=1).set_width(box_width).disable().set_style(style_3)
+            signal_changed = self._number_dac_changed), alignment=1).set_width(box_width).disable().set_style('font-size: 14pt; font-weight: bold; color: '+('pink'))
     
         # Tabs for band PID value
-        self.grid_params1.add(_g.Label('Band:'),alignment=1).set_style(style_6)
+        self.grid_params1.add(_g.Label('Band:'),alignment=1).set_style('font-size: 14pt; font-weight: bold; color: gold')
         self.number_proportional = self.grid_params1.add(_g.NumberBox(
             value = 10.0, suffix = '°C', bounds = (0,10.0), decimals=4,
             autosettings_path = self.name+'.Proportional', signal_changed = self._number_parameter_changed,
-            tip = 'Prportional band.'), alignment=1).set_width(box_width).disable().set_style(style_6)
+            tip = 'Prportional band.'), alignment=1).set_width(box_width).disable().set_style('font-size: 14pt; font-weight: bold; color: gold')
         
         # New row
         self.grid_params1.new_autorow()
         
         # Tab for integral time PID value
-        self.grid_params1.add(_g.Label('Integral time:'),alignment=1).set_style(style_6)
+        self.grid_params1.add(_g.Label('Integral time:'),alignment=1).set_style('font-size: 14pt; font-weight: bold; color: paleturquoise')
         self.number_integral = self.grid_params1.add(_g.NumberBox(
             value = 88.29, suffix = 'ms', bounds = (0,10000.0), decimals=4,
             autosettings_path = self.name+'.integral', signal_changed = self._number_parameter_changed,
-            tip = 'Integral action time.'), alignment=1).set_width(box_width).disable().set_style(style_6)
+            tip = 'Integral action time.'), alignment=1).set_width(box_width).disable().set_style('font-size: 14pt; font-weight: bold; color: paleturquoise')
         
         # New row
         self.grid_params1.new_autorow()
