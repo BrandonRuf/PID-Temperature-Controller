@@ -17,6 +17,7 @@
 
 #define BAUD 115200
 #define POLARITY_PIN  6
+#define DAC_ADRESS 0x62
 
 #define RREF      4300.0  // The value of the Rref resistor in the RTD package.
 #define RNOMINAL  1000.0  // The 'nominal' 0-degrees-C resistance of the sensor
@@ -88,10 +89,10 @@ void initialize(){
   /*
    * Initialalize control parameters 
    */
-  set_setpoint(24.50);
-  set_parameters(1.0, 1000.0, 1.0);
-  set_period(800);
-  set_dac(0);
+  set_setpoint(24.50);                   // Set temperature setpoint @ 24.5 C
+  set_parameters(4.8, 15.16, 23.42);     // Set control paramters randomly
+  set_period(350);                       // Set control period @ 350 ms
+  set_dac(0);                            // Dac output @ 0 V 
 
   /* Doing a preliminary temperature reading */
   temperature = rtd.temperature(RNOMINAL, RREF);                                        
@@ -106,7 +107,7 @@ void setup() {
     pinMode(POLARITY_PIN, OUTPUT);    // Enable Polarity pin
     digitalWrite(POLARITY_PIN, LOW);  // Set Polarity pin LOW
     
-    dac.begin(0x62);                  // Start communication with the external DAC
+    dac.begin(DAC_ADRESS);            // Start communication with the external DAC
     dac.setVoltage(0, false);         // Set DAC output to ZERO
   }
   
@@ -117,7 +118,6 @@ void setup() {
 void loop() {
   receive_data();                       /* Look for and grab data on the serial line. */
                                         /* If new data is found, the newData flag will be set */ 
-
   if (newData == true) {
       strcpy(temp_data, received_data); /* this temporary copy is necessary to protect the original data    */
                                         /* because strtok() used in parseData() replaces the commas with \0 */
@@ -126,14 +126,15 @@ void loop() {
   }
 
   if(control_flag){
-    read_temperature();              // Read the RTD temperature
+    read_temperature();                        // Read the RTD temperature
     
-    dt = time_recent - time_control; // Update the time differential
-    time_control = time_recent;      // Update the time of the temperature measurement used in the control function
-    
-    control();                       // Call the control function
+    dt           = time_recent - time_control; // Update the time differential
+    time_control = time_recent;                // Update the time of the temperature measurement used in the control function
 
-    control_flag = false;            // Reset control flag
+    if(mode == CLOSED_LOOP){
+      control();                               // Call the control function
+    }
+    control_flag = false;                      // Reset control flag
   }
 }
 
@@ -141,12 +142,12 @@ void read_temperature(){
   /**
    * Measure the RTD temperature, and update the temperature error and measurement time.
    * 
-   * NOTE: This measurment takes in excess of 100-140 milliseconds to complete! 
+   * NOTE: This measurment takes in excess of ~100 milliseconds to complete! 
    * Take this into account if you wish to make your control period very small.
    */
   temperature             = rtd.temperature(RNOMINAL, RREF); // One shot temperature measurement of the rtd 
   error                   = temperature - setpoint;          // Compute the temperature error.
-  time_recent = millis();                                    // Update the time that this measurement was taken
+  time_recent             = millis();                        // Update the time that this measurement was taken
 }
 
 ISR(TIMER1_COMPA_vect){ 
@@ -154,11 +155,10 @@ ISR(TIMER1_COMPA_vect){
  *  Timer1 compare interrupt 
  *  
  *  This interrupt is called at a regular intervals, that can be set with the set_period() function.  
- *  The main function of this interrupt is to call the control() function at fixed time intervals.
+ *  The main function of this interrupt is set the control flag, which is used in the main loop to 
+ *  call the control() function at fixed time intervals.
  *  
  *  NOTE: This interupt will not be active until set_period() is called!
  */
-  if(mode == CLOSED_LOOP){
-    control_flag = true;
-  }
+  control_flag = true;
 }
