@@ -21,7 +21,7 @@
 #define RREF      4300.0  // The value of the Rref resistor in the RTD package.
 #define RNOMINAL  1000.0  // The 'nominal' 0-degrees-C resistance of the sensor
 
-#define ENABLE_OUTPUT true 
+#define ENABLE_OUTPUT false 
 
 /** Basic parameters **/ 
 double temperature; // Will hold the most currently recorded temperature from the RTD
@@ -44,6 +44,8 @@ double dt;             // Time step between temperature measurements used in the
  
 double time_control; // Time of the temperature measurement last used to update the control function   
 double time_recent ; // Time of the most recently taken temperature measurement
+
+boolean control_flag = false;
 
 /** Setup the external DAC **/
 Adafruit_MCP4725 dac;    // New DAC object
@@ -122,8 +124,17 @@ void loop() {
       parseData();                      // Parse the data for commands
       newData = false;                  // Reset newData flag
   }
-  
-  read_temperature();                  
+
+  if(control_flag){
+    read_temperature();              // Read the RTD temperature
+    
+    dt = time_recent - time_control; // Update the time differential
+    time_control = time_recent;      // Update the time of the temperature measurement used in the control function
+    
+    control();                       // Call the control function
+
+    control_flag = false;            // Reset control flag
+  }
 }
 
 void read_temperature(){
@@ -147,14 +158,7 @@ ISR(TIMER1_COMPA_vect){
  *  
  *  NOTE: This interupt will not be active until set_period() is called!
  */
-  
   if(mode == CLOSED_LOOP){
-    dt = time_recent - time_control; // Update the time differential
-    time_control = time_recent;      // Update the time of the temperature measurement used in the control loop
-  
-    interrupts(); /* Re-enable interrupts (allowing nested interrupts) */
-                  /* Interrupts are needed to communicate with the DAC (MCP4725) via I2C */
-                  
-    control();    
+    control_flag = true;
   }
 }
