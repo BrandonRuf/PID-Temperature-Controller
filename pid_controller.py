@@ -341,7 +341,7 @@ class pid_controller(_g.BaseObject):
                 
                 
                 # Change button color as indicator
-                self.button_closed_loop.set_colors(text = 'white',background='limegreen')
+                self.button_closed_loop.set_colors(text = 'limegreen',background='white')
                 
                 _debug('CLOSED_LOOP mode enabled.')
                 
@@ -403,7 +403,7 @@ class pid_controller(_g.BaseObject):
                 self.number_dac.enable()
                 
                 # Change button color as indicator
-                self.button_open_loop.set_colors(text = 'white',background='red')
+                self.button_open_loop.set_colors(text = 'red',background='white')
                 
                 _debug('OPEN_LOOP mode enabled.')
             except:
@@ -544,14 +544,14 @@ class pid_controller(_g.BaseObject):
         self.button_connect.signal_toggled.connect(self._button_connect_toggled)
 
         ## Add mode buttons to GUI (open and closed loop control modes)
-        self.grid_mid.add(_g.Label('Mode:')).set_style('color: azure')
+        self.grid_mid.add(_g.Label('Mode:')).set_style('font-size: 10pt; color: azure')
         
         # Open loop (manual) control mode activation button
-        self.button_open_loop  = self.grid_mid.add(_g.Button('Open Loop' ,checkable=True, tip='Enable manual temperature control.')).disable()
+        self.button_open_loop  = self.grid_mid.add(_g.Button('Open Loop' ,checkable=True, tip='Enable manual temperature control.')).set_style('font-size: 10pt;').disable()
         self.button_open_loop.signal_toggled.connect(self._button_open_loop_toggled)
         
         # Closed loop control mode activation button
-        self.button_closed_loop = self.grid_mid.add(_g.Button('Closed Loop',checkable=True, tip='Enable PID temperature control.')).disable()
+        self.button_closed_loop = self.grid_mid.add(_g.Button('Closed Loop',checkable=True, tip='Enable PID temperature control.')).set_style('font-size: 10pt;').disable()
         self.button_closed_loop.signal_toggled.connect(self._button_closed_loop_toggled)
         
         
