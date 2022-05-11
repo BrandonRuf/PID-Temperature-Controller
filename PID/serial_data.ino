@@ -40,12 +40,57 @@ void receive_data() {
   }
 }
 
+/*
+ * Speed up parseData by getting rid of long function names!!!
+ * Setup a table. single char for function select is plenty!
+ */
+
 void parseData() {      
    strtok_index = strtok(temp_data,",");   // Get the first part - the string
    strcpy(functionCall, strtok_index);     // Copy it to function_call
    strtok_index = strtok(NULL, ",");
-    
-  if(strcmp(functionCall,"set_parameters") == 0){
+
+  if(strcmp(functionCall,"get_all_variables")      == 0){
+      Serial.print(get_temperature(),2);
+      Serial.print(',');
+      Serial.print(get_setpoint(),4);
+      Serial.print(',');
+      Serial.print(get_dac());
+      Serial.print(',');
+      Serial.print(band,4);
+      Serial.print(',');
+      Serial.print(t_integral,4);
+      Serial.print(',');
+      Serial.print(t_derivative,4); 
+      Serial.print(',');
+      Serial.print(get_period());
+      Serial.print(','); 
+      Serial.print(u1,4); 
+      Serial.print(',');
+      Serial.print(u2,4); 
+      Serial.print(',');
+      Serial.println(u3,4); 
+  }
+
+  else if(strcmp(functionCall,"set_dac")           == 0){ 
+    int voltage_12bit = atoi(strtok_index);
+
+    if(mode == OPEN_LOOP){
+      set_dac(voltage_12bit);
+      return;
+    }
+    Serial.println("Arduino must be in OPEN_LOOP mode in order to directly manipulate the dac output.");
+  }
+
+  else if(strcmp(functionCall,"get_parameters")    == 0){
+    Serial.print(band,4);
+    Serial.print(',');
+    Serial.print(t_integral,4);
+    Serial.print(',');
+    Serial.println(t_derivative,4);   
+  }
+  
+  else if(strcmp(functionCall,"set_parameters")    == 0){
     float _band       = atof(strtok_index);     
 
     strtok_index      = strtok(NULL, ",");
@@ -57,92 +102,25 @@ void parseData() {
     set_parameters(_band, _t_i, _t_d);
   }
   
-  if(strcmp(functionCall,"set_dac") == 0){ 
-    int voltage_12bit = atoi(strtok_index);
+  else if(strcmp(functionCall,"set_mode")          == 0){
 
-    if(mode == OPEN_LOOP){
-      set_dac(voltage_12bit);
-      return;
-    }
-    Serial.println("Arduino must be in OPEN_LOOP mode in order to directly manipulate the dac output.");
+    if(strcmp(strtok_index,"OPEN_LOOP")        == 0) set_mode(OPEN_LOOP);
+    else if(strcmp(strtok_index,"CLOSED_LOOP") == 0) set_mode(CLOSED_LOOP);
+    else                                             Serial.println("Invaild Mode.");
+    return;
   }
   
-  if(strcmp(functionCall,"set_mode")        == 0){
+  else if(strcmp(functionCall,"set_period")        == 0) set_period(atoi(strtok_index));
+  
+  else if(strcmp(functionCall,"set_setpoint")      == 0) set_setpoint(atof(strtok_index));    
+  
+  else if(strcmp(functionCall,"get_dac")           == 0) Serial.println(get_dac());
 
-    if(strcmp(strtok_index,"OPEN_LOOP") == 0){
-      set_mode(OPEN_LOOP);
-    }   
-    else if(strcmp(strtok_index,"CLOSED_LOOP") == 0) {
-      set_mode(CLOSED_LOOP);
-    }
-    else{
-      Serial.println("Invaild Mode.");
-      return;
-    }
-  }
+  else if(strcmp(functionCall,"get_mode")          == 0) Serial.println(MODE_NAMES[get_mode()]);
   
-  if(strcmp(functionCall,"set_period")      == 0){
-    set_period(atoi(strtok_index));
-  }
-  
-  if(strcmp(functionCall,"set_setpoint")    == 0){      
-    set_setpoint(atof(strtok_index));    
-  }
-  
-  if(strcmp(functionCall,"get_dac")         == 0){ 
-      Serial.println(get_dac());
-  }
-  
-  if(strcmp(functionCall,"get_mode")        == 0){ 
-    MODES _mode = get_mode();
-    if(_mode == CLOSED_LOOP){
-      Serial.println("CLOSED_LOOP");        
-    }
-    else{
-      Serial.println("OPEN_LOOP");
-    }
-  }
-  
-  if(strcmp(functionCall,"get_temperature") == 0){
-    float _temperature = get_temperature();
-    Serial.println(_temperature,2);
-  }
-  
-  if(strcmp(functionCall,"get_parameters")  == 0){
-    Serial.print(band,4);
-    Serial.print(',');
-    Serial.print(t_integral,4);
-    Serial.print(',');
-    Serial.println(t_derivative,4);   
-  }
-  
-  if(strcmp(functionCall,"get_setpoint")    == 0){ 
-    Serial.println(get_setpoint(),4);    
-  }
-  
-  if(strcmp(functionCall,"get_period")    == 0){ 
-    Serial.println(get_period());    
-  }
+  else if(strcmp(functionCall,"get_temperature")   == 0) Serial.println(get_temperature(),2);
 
-  if(strcmp(functionCall,"get_all_variables") == 0){
-    Serial.print(get_temperature(),2);
-    Serial.print(',');
-    Serial.print(get_setpoint(),4);
-    Serial.print(',');
-    Serial.print(get_dac());
-    Serial.print(',');
-    Serial.print(band,4);
-    Serial.print(',');
-    Serial.print(t_integral,4);
-    Serial.print(',');
-    Serial.print(t_derivative,4); 
-    Serial.print(',');
-    Serial.print(get_period());
-    Serial.print(','); 
-    Serial.print(u1,4); 
-    Serial.print(',');
-    Serial.print(u2,4); 
-    Serial.print(',');
-    Serial.println(u3,4); 
-  }
+  else if(strcmp(functionCall,"get_setpoint")      == 0) Serial.println(get_setpoint(),4);    
+
+  else if(strcmp(functionCall,"get_period")        == 0) Serial.println(get_period());
 }
