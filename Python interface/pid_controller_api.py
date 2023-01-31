@@ -293,7 +293,7 @@ class pid_api():
         str
             Raw data string read from the serial line.
         """
-        return self.serial.read_until(expected = '\n'.encode()).decode().strip('\n')
+        return self.serial.read_until(expected = '\r\n'.encode()).decode().strip('\r\n')
     
     def get_all_variables(self):
         """

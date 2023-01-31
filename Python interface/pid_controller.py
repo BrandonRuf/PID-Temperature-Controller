@@ -13,16 +13,13 @@ except: _comports = None
 _p = _traceback.print_last
 _g = _egg.gui
 
-
 # Dark theme
-
 _s.settings['dark_theme_qt'] = True
 
 try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID( u'Arduino PID')
 except Exception: 
         pass
     
-
 
 class pid_controller():
     
@@ -67,7 +64,7 @@ class pid_controller():
         self.populate_window(ports, default_port, show, block, name)
         
         # Create Timer for collecting data 
-        self.timer = _g.Timer(interval_ms=500, single_shot=False)
+        self.timer = _g.Timer(interval_ms=250, single_shot=False)
         self.timer.signal_tick.connect(self._timer_tick)
         
         self.t0 = None
@@ -79,7 +76,7 @@ class pid_controller():
         # Populate the GUI window 
         w = self.window
         gt = self._grid_top    = w.add(_g.GridLayout(margins=False), column=1, row=1, alignment=0)
-        gb = self._grid_bottom = w.add(_g.GridLayout(margins=False), column=1, row=2, alignment=0)
+        gb = self._grid_bottom = w.add(_g.GridLayout(margins=False), column=1, row=2, alignment=0).disable()
         
         self.combo_ports = gt.add(_g.ComboBox(ports, default_index = default_port, autosettings_path=self.name+'.combo_ports'))
         #self.combo_ports.signal_changed.connect(self._ports_changed)
@@ -120,15 +117,16 @@ class pid_controller():
         self.grid_left.new_autorow()
         self.settings = self.grid_left.add(_g.TreeDictionary(
             autosettings_path  = name+'.settings',
-            name               = name+'.settings'),column_span=2).set_width(260)
+            name               = name+'.settings'),column_span=10).set_width(800)
     
         # Add the sweep controls
 
         self.button_loop_control = self.grid_left_top.add(_g.Button(
             text            = 'Open\nLoop',
-            checkable       = True,
+            signal_clicked  = self.loop_control_changed,
             tip = 'Set outputs, collect data, and estimate quadratures at a variety of frequencies specified below.',
-            signal_toggled  = None), alignment = 2).set_style('font-size: 11pt;').set_width(100)
+            signal_toggled  = None), 
+            alignment = 2).set_style('font-size: 11pt;').set_width(100).set_colors(text = 'orange').disable()
         
         self.button_inject = self.grid_left_top_extra.add(_g.Button('',
             checkable       = True,
@@ -137,7 +135,7 @@ class pid_controller():
             'Can be used for generalized testing, for example:\n'+
             '•Testing the stability of your control loop when in closed loop operation.\n'+
             '•Testing the thermal response of your system when in open loop operation.'),
-            alignment = 2).set_width(75).set_height(75)
+            alignment = 2).set_width(75).set_height(75).disable()
         
         self.button_inject._widget.setIcon(QtGui.QIcon('Images/inject_pulse.png'))
         self.button_inject._widget.setIconSize(QtCore.QSize(40,40))
@@ -151,7 +149,7 @@ class pid_controller():
         self.grid_right_top.add(_g.Label('Measured Temperature:'), 0,0, alignment=2).set_style('font-size: 12pt; color: white')
         
         self.number_temperature = self.grid_right_top.add(_g.NumberBox(
-            25.4, dec=True,suffix = '°C', tip=''), 1, 0).set_width(100).set_style('font-size: 12pt; color: white').disable()
+            25.4, dec=True,suffix = '°C', tip=''), 1, 0).set_width(125).set_style('font-size: 12pt; color: white').disable()
         
         self.grid_right_top.set_column_stretch(1)
 
@@ -159,13 +157,13 @@ class pid_controller():
         
         self.number_setpoint = self.grid_right_top.add(_g.NumberBox(
             25.4, dec=True, bounds=(-50,80),suffix = '°C',
-            tip='Iteration at this frequency.'),1,1).set_width(100).set_style('font-size: 12pt; color: cyan')
+            tip='Iteration at this frequency.'),1,1).set_width(125).set_style('font-size: 12pt; color: cyan')
         
         self.grid_right_top.add(_g.Label('DAC Output:'), 2,1, alignment=2).set_style('font-size: 12pt; color: pink')
         
         self.number_dac = self.grid_right_top.add(_g.NumberBox(
             0, int=True, bounds=(-4095,4095), 
-            tip='Iteration at this frequency.'),3,1).set_width(100).set_style('font-size: 12pt; color: pink')
+            tip='Iteration at this frequency.'),3,1).set_width(125).set_style('font-size: 12pt; color: pink')
 
         ## Tabs for data plotting ##
         self.grid_right.new_autorow()
@@ -180,15 +178,16 @@ class pid_controller():
             name              = name+'.plot_raw',
             delimiter=','), alignment=0)
 
+        #self.button_folder = self.grid_top.place_object(_g.Button(' ', tip='Search folder', checkable = True)).set_width(64).set_height(64)
+        #self.button_folder._widget.setIcon(QtGui.QIcon('Images/OpenFolder.png')) 
+
         self.plot_debug = self.tab_debug.add(_g.DataboxPlot(
             file_type         = '*.quad',
             autosettings_path = name+'.plot_quadratures',
             name              = name+'.plot_quadratures',
             autoscript        = 1), alignment=0, column_span=3)
         self.tab_debug.set_column_stretch(2)
-        #self.button_folder = self.grid_top.place_object(_g.Button(' ', tip='Search folder', checkable = True)).set_width(64).set_height(64)
-        #self.button_folder._widget.setIcon(QtGui.QIcon('Images/OpenFolder.png'))      
-          
+     
     def setup_ParameterTree(self):
         s = self.settings
 
@@ -216,6 +215,8 @@ class pid_controller():
 
         s.add_parameter('Output/DAC', 0, int=True, bounds=(0,4095),
             tip = 'Sweep stop frequency.')
+        
+        s.connect_signal_changed('Output/DAC',self._number_dac_changed)
         
         s.add_parameter('Output/Polarity', ['Heating','Cooling'],
             tip = 'Sweep stop frequency.')
@@ -275,6 +276,20 @@ class pid_controller():
         self.settings.get_widget('Settings/Arduino').setExpanded(False)
         self.settings.get_widget('Settings/GUI').setExpanded(False)
     
+    def loop_control_changed(self):
+        
+        if(self.button_loop_control.get_text() == 'Open\nLoop'):
+            self.button_loop_control.set_colors(text = 'mediumspringgreen')
+            self.button_loop_control.set_text('Closed\nLoop')
+            self.api.set_mode('CLOSED_LOOP')
+            return
+        
+        if(self.button_loop_control.get_text() == 'Closed\nLoop'):
+            self.button_loop_control.set_colors(text = 'orange')
+            self.button_loop_control.set_text('Open\nLoop')
+            self.api.set_mode('OPEN_LOOP')
+            return
+    
     def _button_connect_toggled(self, *a):
         """
         Called when the connect button is toggled in the GUI. 
@@ -306,15 +321,15 @@ class pid_controller():
                 dac_output   = self.api.get_dac()
                 
                 # Update the temperature, setpoint, and parameter tabs
-                self.number_temperature .set_value(T, block_signals = True)
+                self.number_temperature .set_value(T,          block_signals=True)
                 self.number_setpoint    .set_value(S,          block_signals=True)
                 self.number_dac         .set_value(dac_output, block_signals=True)
                 
                 
-                self.settings.set_value('Loop Parameter/Band', P)
-                self.settings.set_value('Loop Parameter/Integral time', I)
-                self.settings.set_value('Loop Parameter/Derivative time', D)
-                self.settings.set_value('Loop Parameter/Control Period', period)
+                self.settings.set_value('Loop Parameters/Band', P)
+                self.settings.set_value('Loop Parameters/Integral time', I)
+                self.settings.set_value('Loop Parameters/Derivative time', D)
+                self.settings.set_value('Loop Parameters/Control Period', period)
 
             # Record the time if it's not already there.
             if self.t0 is None: self.t0 = _time.time()
@@ -324,6 +339,10 @@ class pid_controller():
             self.combo_baudrates.disable()
             self.combo_ports.disable()
             self.number_timeout.disable()
+            
+            self.button_loop_control.enable()
+            self.button_inject.enable()
+            self._grid_bottom.enable()
             
             # Change the button color to indicate we are connected
             self.button_connect.set_text('Connected').set_colors(background = 'blue')
@@ -344,6 +363,10 @@ class pid_controller():
             self.combo_ports.enable()
             self.number_timeout.enable()
             
+            self.button_loop_control.disable()
+            self.button_inject.disable()
+            self._grid_bottom.disable()
+            
             # Display connection status to user
             self.label_status.set_text('Disconnected').set_colors('white' if _s.settings['dark_theme_qt'] else 'blue') 
             
@@ -361,8 +384,7 @@ class pid_controller():
         t_d  = self.settings['Loop Parameters/Derivative time']
         
         self.api.set_parameters(band, t_i, t_d)
-        
-        
+         
     def _number_period_changed(self):
         """
         Called when someone changes the control period number in the GUI.
@@ -373,7 +395,9 @@ class pid_controller():
         
         self.api.set_period(_period)
         
-        
+    def _number_dac_changed(self):
+        self.api.set_dac(self.settings['Output/DAC'])
+            
     def _timer_tick(self, *a):
         """
         Called whenever the timer ticks. 
@@ -407,7 +431,6 @@ class pid_controller():
         """
         Just updates the status with the exception.
         """
-        #self.label_message(str(a)).set_colors('red')
         
     
 
