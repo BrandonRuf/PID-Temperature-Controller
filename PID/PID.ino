@@ -11,6 +11,9 @@
  * Email: brandon.ruffolo@mcgill.ca
 */
 
+#define SKETCH_VERSION "0.0.2"
+
+
 /* Imports */
 #include <Adafruit_MCP4725.h>
 #include <MAX31865.h>          // Modified Adafruit MAX31865 Library
@@ -28,7 +31,7 @@
 #define PT1000_TBL_SIZE 202  // Size of the pt1000 RTD lookup table
 
 /* Output control */
-#define ENABLE_OUTPUT false 
+#define ENABLE_OUTPUT true 
 
 /* Pt1000 RTD Lookup table.
  * Resistance values from -50C to +150C, in 1°C increments, conforming to IEC 751 Platinum RTD standard.
@@ -95,7 +98,9 @@ int16_t dac_output = 0;  //
 
 /** Setup MAX 31865 resistance-to-digital converter **/
 Adafruit_MAX31865 rtd = Adafruit_MAX31865(13, 12, 11, 10); // Use software SPI: CS, DI, DO, CLK
-boolean polyfit      = true;
+
+/*  */
+boolean polyfit       = true;
 
 void _init(){
   /*

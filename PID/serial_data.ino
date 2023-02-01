@@ -93,6 +93,10 @@ void parseData() {
   else if(strcmp(functionCall,"set_period")     == 0) set_period(atoi(strtok_index));
   
   else if(strcmp(functionCall,"set_setpoint")   == 0) set_setpoint(atof(strtok_index));    
+
+  else if(strcmp(functionCall,"set_polyfit")    == 0) polyfit = atoi(strtok_index);
+  
+  else if(strcmp(functionCall,"get_polyfit")    == 0) Serial.println(polyfit);
   
   else if(strcmp(functionCall,"get_dac")        == 0) Serial.println(dac_output);
 
@@ -103,6 +107,14 @@ void parseData() {
   else if(strcmp(functionCall,"get_setpoint")   == 0) Serial.println(setpoint,4);    
 
   else if(strcmp(functionCall,"get_period")     == 0) Serial.println(period);
+
+  else if(strcmp(functionCall,"get_version")   == 0){
+    Serial.print("Sketch version: ");
+    Serial.print(SKETCH_VERSION);
+    Serial.print(" (Compiled on ");
+    Serial.print(__DATE__);
+    Serial.println(")");
+  }
 }
 
 void write(float _data, char _termination){
