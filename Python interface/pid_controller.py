@@ -147,23 +147,21 @@ class pid_controller():
         self.grid_right_top  = self.grid_right.add(_g.GridLayout(margins=False),alignment=1)
         
         self.grid_right_top.add(_g.Label('Measured Temperature:'), 0,0, alignment=2).set_style('font-size: 12pt; color: white')
-        
         self.number_temperature = self.grid_right_top.add(_g.NumberBox(
             25.4, dec=True,suffix = '°C', tip=''), 1, 0).set_width(125).set_style('font-size: 12pt; color: white').disable()
         
         self.grid_right_top.set_column_stretch(1)
 
         self.grid_right_top.add(_g.Label('Setpoint Temperature:'), 0,1, alignment=2).set_style('font-size: 12pt; color: cyan')
-        
         self.number_setpoint = self.grid_right_top.add(_g.NumberBox(
             25.4, dec=True, bounds=(-50,80),suffix = '°C',
-            tip='Iteration at this frequency.'),1,1).set_width(125).set_style('font-size: 12pt; color: cyan')
+            tip='Iteration at this frequency.'),
+            1,1).set_width(125).set_style('font-size: 12pt; color: cyan').disable()
         
         self.grid_right_top.add(_g.Label('DAC Output:'), 2,1, alignment=2).set_style('font-size: 12pt; color: pink')
-        
         self.number_dac = self.grid_right_top.add(_g.NumberBox(
             0, int=True, bounds=(-4095,4095), 
-            tip='Iteration at this frequency.'),3,1).set_width(125).set_style('font-size: 12pt; color: pink')
+            tip='Iteration at this frequency.'),3,1).set_width(125).set_style('font-size: 12pt; color: pink').disable()
 
         ## Tabs for data plotting ##
         self.grid_right.new_autorow()
@@ -177,6 +175,11 @@ class pid_controller():
             autosettings_path = name+'.plot_raw',
             name              = name+'.plot_raw',
             delimiter=','), alignment=0)
+        
+        self._button_autorange= self.plot_main.grid_controls2.place_object(
+            _g.Button('Auto range',
+                      checkable=False,
+                      signal_clicked = self._button_autorange_clicked)).set_width(75)
 
         #self.button_folder = self.grid_top.place_object(_g.Button(' ', tip='Search folder', checkable = True)).set_width(64).set_height(64)
         #self.button_folder._widget.setIcon(QtGui.QIcon('Images/OpenFolder.png')) 
@@ -187,6 +190,10 @@ class pid_controller():
             name              = name+'.plot_quadratures',
             autoscript        = 1), alignment=0, column_span=3)
         self.tab_debug.set_column_stretch(2)
+     
+    def _button_autorange_clicked(self):    
+        for plot in self.plot_main.plot_widgets:
+            plot.enableAutoRange()
      
     def setup_ParameterTree(self):
         s = self.settings
@@ -213,13 +220,19 @@ class pid_controller():
             suffix='ms', bounds=(20,10000), siPrefix=True,
             tip = 'How many times to repeat the quadrature measurement at each step after settling.')
 
-        s.add_parameter('Output/DAC', 0, int=True, bounds=(0,4095),
+        s.add_parameter('Output/DAC', 0, int=True, bounds=(-4095,4095),
             tip = 'Sweep stop frequency.')
-        
         s.connect_signal_changed('Output/DAC',self._number_dac_changed)
         
-        s.add_parameter('Output/Polarity', ['Heating','Cooling'],
-            tip = 'Sweep stop frequency.')
+        # Force to 0
+        s.block_key_signals('Output/DAC')
+        s.set_value('Output/DAC', 0)
+        s.unblock_key_signals('Output/DAC')
+        
+        s.add_parameter('Output/Temperature Setpoint', 24.5, bounds = (-30,80),
+                        suffix = '°C',
+                        tip = 'Sweep stop frequency.')
+        s.connect_signal_changed('Output/Temperature Setpoint',self._number_setpoint_changed)
         
         s.add_parameter('DeBug/User Variables', True)
         
@@ -325,28 +338,35 @@ class pid_controller():
                 self.number_setpoint    .set_value(S,          block_signals=True)
                 self.number_dac         .set_value(dac_output, block_signals=True)
                 
-                
-                self.settings.set_value('Loop Parameters/Band', P)
-                self.settings.set_value('Loop Parameters/Integral time', I)
+                # Update the loop parameters
+                self.settings.set_value('Loop Parameters/Band'           , P)
+                self.settings.set_value('Loop Parameters/Integral time'  , I)
                 self.settings.set_value('Loop Parameters/Derivative time', D)
-                self.settings.set_value('Loop Parameters/Control Period', period)
+                self.settings.set_value('Loop Parameters/Control Period' , period)
 
             # Record the time if it's not already there.
             if self.t0 is None: self.t0 = _time.time()
 
-
-            # Disable other controls
+            # Disable serial controls
             self.combo_baudrates.disable()
-            self.combo_ports.disable()
-            self.number_timeout.disable()
+            self.combo_ports    .disable()
+            self.number_timeout .disable()
             
+            # Enable PID controls
             self.button_loop_control.enable()
-            self.button_inject.enable()
-            self._grid_bottom.enable()
+            self.button_inject      .enable()
+            self._grid_bottom       .enable()
             
             # Change the button color to indicate we are connected
-            self.button_connect.set_text('Connected').set_colors(background = 'blue')
+            self.button_connect.set_text('Disconnect').set_colors(background = 'blue')
             
+            # Clear the plot of any previous data
+            self.plot_main.clear()
+            
+            # Print Arduino sketch version for reference 
+            self.label_status.set_text(self.api.get_version())  
+            
+            # Start the timer
             self.timer.start()
 
         # Otherwise, shut it down
@@ -358,18 +378,17 @@ class pid_controller():
             #
             self.button_connect.set_text('Connect').set_colors()
 
-            # Re-enable other controls
+            # Re-enable serial controls
             self.combo_baudrates.enable()
-            self.combo_ports.enable()
-            self.number_timeout.enable()
+            self.combo_ports    .enable()
+            self.number_timeout .enable()
             
+            # Disable PID controls
             self.button_loop_control.disable()
-            self.button_inject.disable()
-            self._grid_bottom.disable()
+            self.button_inject      .disable()
+            self._grid_bottom       .disable()
             
-            # Display connection status to user
-            self.label_status.set_text('Disconnected').set_colors('white' if _s.settings['dark_theme_qt'] else 'blue') 
-            
+            # Stop the timer
             self.timer.stop()
     
     def loop_parameter_changed(self):
@@ -398,6 +417,10 @@ class pid_controller():
     def _number_dac_changed(self):
         self.api.set_dac(self.settings['Output/DAC'])
             
+        
+    def _number_setpoint_changed(self):
+        self.api.set_temperature_setpoint(self.settings['Output/Temperature Setpoint'])
+        
     def _timer_tick(self, *a):
         """
         Called whenever the timer ticks. 
@@ -413,10 +436,10 @@ class pid_controller():
         self.number_setpoint   .set_value(S, block_signals=True)
 
         # Append this to the databox
-        self.plot_main .append_row([t, T, T-S, 100*dac_level/4095], ckeys=['Time (s)', 'Temperature (C)', 'Temperature Error (C)', 'DAC Voltage (%)'])
+        self.plot_main .append_row([t/1000, T, T-S, 100*dac_level/4095], ckeys=['Time (s)', 'Temperature (C)', 'Temperature Error (C)', 'DAC Voltage (%)'])
         
         # Update the plot
-        self.plot_main .plot()
+        self.plot_main.plot()
 
         # Update GUI
         self.window.process_events()

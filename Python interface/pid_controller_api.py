@@ -328,6 +328,18 @@ class pid_api():
         
         
         return _time, _temp, _setpoint, _dac, _period
+
+    def get_version(self):
+        """
+        Get the version of sketch currently on the arduino board.
+        Returns
+        -------
+        str
+            A string describing the arduino sketch version and compilation date.
+        """
+        self.write('get_version')
+        
+        return self.read()
         
 def _debug(*a):
     if _debug_enabled:
