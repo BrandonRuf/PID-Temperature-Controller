@@ -198,41 +198,40 @@ class pid_controller():
     def setup_ParameterTree(self):
         s = self.settings
 
-        s.add_parameter('Loop Parameters/Band', 10.0, dec=True,
+        s.add_parameter('Loop Parameters/Band', 10.01, dec=True, decimals = 5,
             suffix = '°C', siPrefix = True,
             tip = 'How long to settle after changing the frequency.').set_style('font-size: 10pt; font-weight: bold; color: white').set_width(300)
-        
-        s.connect_signal_changed('Loop Parameters/Band',self.loop_parameter_changed)
 
-        s.add_parameter('Loop Parameters/Integral time', 0.1, dec=True,
+        s.add_parameter('Loop Parameters/Integral time', 0.12, dec=True, decimals = 5,
             suffix = 's', siPrefix = True,
             tip = 'Minimum amount of data to collect (will be an integer number of periods).')
         
-        s.connect_signal_changed('Loop Parameters/Integral time',self.loop_parameter_changed)
-
-        s.add_parameter('Loop Parameters/Derivative time', 53.0, dec=True,
+        s.add_parameter('Loop Parameters/Derivative time', 53.03, dec=True, decimals = 5,
             suffix='s', siPrefix=True, bounds=(100,None),
             tip = 'Maximum allowed input samples (to avoid very long runs, e.g.).')
         
-        s.connect_signal_changed('Loop Parameters/Derivative time',self.loop_parameter_changed)
-
         s.add_parameter('Loop Parameters/Control Period', 1.0, dec=True,
             suffix='ms', bounds=(20,10000), siPrefix=True,
             tip = 'How many times to repeat the quadrature measurement at each step after settling.')
 
         s.add_parameter('Output/DAC', 0, int=True, bounds=(-4095,4095),
             tip = 'Sweep stop frequency.')
-        s.connect_signal_changed('Output/DAC',self._number_dac_changed)
         
         # Force to 0
         s.block_key_signals('Output/DAC')
         s.set_value('Output/DAC', 0)
         s.unblock_key_signals('Output/DAC')
         
-        s.add_parameter('Output/Temperature Setpoint', 24.5, bounds = (-30,80),
+        s.add_parameter('Output/Temperature Setpoint', 24.5, bounds = (-30,80), decimals = 5,
                         suffix = '°C',
                         tip = 'Sweep stop frequency.')
-        s.connect_signal_changed('Output/Temperature Setpoint',self._number_setpoint_changed)
+        
+        s.connect_signal_changed('Loop Parameters/Band'           , self.loop_parameter_changed)
+        s.connect_signal_changed('Loop Parameters/Integral time'  , self.loop_parameter_changed)
+        s.connect_signal_changed('Loop Parameters/Derivative time', self.loop_parameter_changed)
+        s.connect_signal_changed('Loop Parameters/Control Period' , self._number_period_changed)
+        s.connect_signal_changed('Output/DAC'                     , self._number_dac_changed)
+        s.connect_signal_changed('Output/Temperature Setpoint'    , self._number_setpoint_changed)
         
         s.add_parameter('DeBug/User Variables', True)
         
@@ -249,8 +248,16 @@ class pid_controller():
         s.add_parameter('Pulse/Polarity', ['Heat','Cool'],
             tip = 'Number of steps from start to stop.')
         
-        s.add_parameter('Settings/MAX31865/Conversion Mode', ['Continuous', 'One-Shot'],
+        s.add_parameter('Settings/MAX31865/Conversion Mode', ['One-Shot', 'Continuous'],
                         tip = 'Number of steps from start to stop.')
+        
+        s.add_parameter('Settings/MAX31865/Enable Bias', True,
+                        tip = 'Applies to One-Shot conversions. RTD self-heating can be reduced with bias disabled.\n'+
+                        'If disabled, the RTD RC network will need to charge everytime a conversion is initiated.\n'+
+                        'Practically this will increase the conversion time by 10 milliseconds.')
+        
+        s.add_parameter('Settings/MAX31865/Configuration register', '0b00000000',
+                        tip = 'Number of steps from start to stop.', readonly = True)
         
         s.add_parameter('Settings/MAX31865/Fault Check', True,
                         tip = 'Number of steps from start to stop.')
@@ -286,8 +293,8 @@ class pid_controller():
         a.setExpanded(False)
         
         self.settings.get_widget('Settings/MAX31865').setExpanded(False)
-        self.settings.get_widget('Settings/Arduino').setExpanded(False)
-        self.settings.get_widget('Settings/GUI').setExpanded(False)
+        self.settings.get_widget('Settings/Arduino') .setExpanded(False)
+        self.settings.get_widget('Settings/GUI')     .setExpanded(False)
     
     def loop_control_changed(self):
         
@@ -343,6 +350,18 @@ class pid_controller():
                 self.settings.set_value('Loop Parameters/Integral time'  , I)
                 self.settings.set_value('Loop Parameters/Derivative time', D)
                 self.settings.set_value('Loop Parameters/Control Period' , period)
+                
+                # Force to DAC 0
+                self.settings.block_key_signals('Output/DAC')
+                self.settings.set_value('Output/DAC', 0)
+                self.settings.unblock_key_signals('Output/DAC')
+                
+                config = self.api.get_RTD_config()
+                for i in range(8-len(config)): 
+                    config = '0'+ config
+                config = '0b'+config
+                
+                self.settings.set_value('Settings/MAX31865/Configuration register', config)
 
             # Record the time if it's not already there.
             if self.t0 is None: self.t0 = _time.time()
@@ -401,6 +420,7 @@ class pid_controller():
         band = self.settings['Loop Parameters/Band']
         t_i  = self.settings['Loop Parameters/Integral time']
         t_d  = self.settings['Loop Parameters/Derivative time']
+        print(band)
         
         self.api.set_parameters(band, t_i, t_d)
          

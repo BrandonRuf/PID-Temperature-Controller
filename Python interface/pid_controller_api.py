@@ -215,7 +215,7 @@ class pid_api():
         """
         if self.simulation: return 
         
-        self.write('set_parameters,%.4f,%.4f,%.4f'%(band,t_i,t_d)) 
+        self.write('set_pid,%.4f,%.4f,%.4f'%(band,t_i,t_d)) 
         
     def set_mode(self,mode):
         """
@@ -294,6 +294,11 @@ class pid_api():
             Raw data string read from the serial line.
         """
         return self.serial.read_until(expected = '\r\n'.encode()).decode().strip('\r\n')
+    
+    def get_RTD_config(self):
+        self.write('get_MAX31865_config')
+        
+        return self.read()
     
     def get_all_variables(self):
         """
