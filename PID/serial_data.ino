@@ -47,7 +47,7 @@ void parseData() {
    strtok_index = strtok(NULL, ",");
 
   if(strcmp(functionCall,"get_all")      == 0){
-      write(time_recent, delimiter);
+      write(time_control, delimiter);
       write(temperature, delimiter);
       write(setpoint   , delimiter);
       write(dac_output , delimiter);
@@ -108,13 +108,15 @@ void parseData() {
 
   else if(strcmp(functionCall,"get_period")     == 0) Serial.println(period);
 
-  else if(strcmp(functionCall,"get_version")   == 0){
+  else if(strcmp(functionCall,"get_version")    == 0){
     Serial.print("Sketch version: ");
     Serial.print(SKETCH_VERSION);
     Serial.print(" (Compiled on ");
     Serial.print(__DATE__);
     Serial.println(")");
   }
+  else if(strcmp(functionCall,"set_bias")              == 0) rtd.enableBias(atoi(strtok_index));
+  else if(strcmp(functionCall,"get_MAX31865_config")   == 0) Serial.println(rtd.readRegister8(MAX31865_CONFIG_REG), BIN);
 }
 
 void write(float _data, char _termination){
