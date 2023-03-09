@@ -41,7 +41,12 @@ void set_parameters(float _band, float _t_integral, float _t_derivative){
   }
 
 void set_dac(int voltage_12bit){
-  
+
+  // Limit magnitude of voltage_12bit  
+  if(abs(voltage_12bit) > 4095){
+      voltage_12bit = sgn(voltage_12bit)*4095;
+    }
+    
   if(ENABLE_OUTPUT){
     
     // Check if a polarity change is needed

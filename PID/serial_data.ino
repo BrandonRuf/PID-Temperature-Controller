@@ -48,10 +48,13 @@ void parseData() {
 
   if(strcmp(functionCall,"get_all")      == 0){
       write(time_control, delimiter);
-      write(temperature, delimiter);
-      write(setpoint   , delimiter);
-      write(dac_output , delimiter);
-      write(get_period(),endMarker);
+      write(temperature,  delimiter);
+      write(setpoint   ,  delimiter);
+      write(dac_output ,  delimiter);
+      write(get_period(), delimiter);
+      write(u1,           delimiter);
+      write(u2,           delimiter);
+      write(u3,           endMarker);
   }
 
   else if(strcmp(functionCall,"set_dac")           == 0){ 

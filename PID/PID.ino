@@ -11,7 +11,7 @@
  * Email: brandon.ruffolo@mcgill.ca
 */
 
-#define SKETCH_VERSION "0.0.2"
+#define SKETCH_VERSION "0.0.9"
 
 
 /* Imports */
@@ -108,11 +108,11 @@ void _init(){
    */
   set_setpoint(24.50);                   // Set temperature setpoint @ 24.5 C
   set_parameters(4.8, 15.16, 23.42);     // Set control paramters (as marked in the SWAN hatch)
-  set_period(350);                       // Set control period @ 350 ms
+  set_period(200);                       // Set control period @ 200 ms
   set_dac(0);                            // Dac output @ 0
 
   /* Do a preliminary temperature reading */
-  uint16_t _adc = rtd.readRTD();              // One shot ADC measurement of the rtd
+  uint16_t _adc = rtd.readRTD();            // One shot ADC measurement of the rtd
   temperature   = lookup_temperature(_adc); // Convert ADC measurement to temperature                                      
   time_control  = millis(); 
   time_recent   = millis();

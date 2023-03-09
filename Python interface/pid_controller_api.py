@@ -37,7 +37,7 @@ class pid_api():
         Upper limit on the temperature setpoint (C).
         
     """
-    def __init__(self, port='COM3', baudrate=115200, timeout=3000, temperature_limit=80):
+    def __init__(self, port='COM3', baudrate=115200, timeout=500, temperature_limit=80):
 
         self._temperature_limit = temperature_limit        
 
@@ -330,9 +330,12 @@ class pid_api():
         _setpoint  = float(raw_params[2])
         _dac       = float(raw_params[3]) 
         _period    = float(raw_params[4])
+        _u1        = float(raw_params[5])
+        _u2        = float(raw_params[6])
+        _u3        = float(raw_params[7])
         
         
-        return _time, _temp, _setpoint, _dac, _period
+        return _time, _temp, _setpoint, _dac, _period, _u1, _u2, _u3
 
     def get_version(self):
         """

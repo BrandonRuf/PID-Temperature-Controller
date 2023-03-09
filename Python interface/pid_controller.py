@@ -78,8 +78,9 @@ class pid_controller():
         gt = self._grid_top    = w.add(_g.GridLayout(margins=False), column=1, row=1, alignment=0)
         gb = self._grid_bottom = w.add(_g.GridLayout(margins=False), column=1, row=2, alignment=0).disable()
         
-        self.combo_ports = gt.add(_g.ComboBox(ports, default_index = default_port, autosettings_path=self.name+'.combo_ports'))
-        #self.combo_ports.signal_changed.connect(self._ports_changed)
+        if default_port is None: default_port = 0
+        self.combo_ports = gt.add(_g.ComboBox(ports, default_index = default_port))
+        self.combo_ports.signal_changed.connect(self._ports_changed)
         
         # Add BAUD selector to GUI 
         gt.add(_g.Label('Baud:'))
@@ -88,7 +89,7 @@ class pid_controller():
         
         # Add Timeout selector to GUI 
         gt.add(_g.Label('Timeout:'),alignment=1)
-        self.number_timeout = gt.add(_g.NumberBox(500, dec=True, bounds=(1, None), suffix=' ms',
+        self.number_timeout = gt.add(_g.NumberBox(100, dec=True, bounds=(1, None), suffix=' ms',
                          tip='How long to wait for an answer before giving up (ms).', autosettings_path=self.name+'.number_timeout')).set_width(100)
         
         # Add Connect Button 
@@ -175,11 +176,6 @@ class pid_controller():
             autosettings_path = name+'.plot_raw',
             name              = name+'.plot_raw',
             delimiter=','), alignment=0)
-        
-        self._button_autorange= self.plot_main.grid_controls2.place_object(
-            _g.Button('Auto range',
-                      checkable=False,
-                      signal_clicked = self._button_autorange_clicked)).set_width(75)
 
         #self.button_folder = self.grid_top.place_object(_g.Button(' ', tip='Search folder', checkable = True)).set_width(64).set_height(64)
         #self.button_folder._widget.setIcon(QtGui.QIcon('Images/OpenFolder.png')) 
@@ -191,32 +187,28 @@ class pid_controller():
             autoscript        = 1), alignment=0, column_span=3)
         self.tab_debug.set_column_stretch(2)
      
-    def _button_autorange_clicked(self):    
-        for plot in self.plot_main.plot_widgets:
-            plot.enableAutoRange()
-     
     def setup_ParameterTree(self):
         s = self.settings
 
-        s.add_parameter('Loop Parameters/Band', 10.01, dec=True, decimals = 5,
+        s.add_parameter('Output/DAC', 0, int=True, bounds=(-4095,4095),
+            tip = 'Sweep stop frequency.')
+        
+        s.add_parameter('Loop Parameters/Band', 10.01, dec=True, decimals = 5, bounds = (0,None),
             suffix = '°C', siPrefix = True,
             tip = 'How long to settle after changing the frequency.').set_style('font-size: 10pt; font-weight: bold; color: white').set_width(300)
 
-        s.add_parameter('Loop Parameters/Integral time', 0.12, dec=True, decimals = 5,
+        s.add_parameter('Loop Parameters/Integral time', 0.12, dec=True, decimals = 5,  bounds = (0,None),
             suffix = 's', siPrefix = True,
             tip = 'Minimum amount of data to collect (will be an integer number of periods).')
         
         s.add_parameter('Loop Parameters/Derivative time', 53.03, dec=True, decimals = 5,
-            suffix='s', siPrefix=True, bounds=(100,None),
+            suffix='s', siPrefix=True, bounds=(0,None),
             tip = 'Maximum allowed input samples (to avoid very long runs, e.g.).')
         
         s.add_parameter('Loop Parameters/Control Period', 1.0, dec=True,
             suffix='ms', bounds=(20,10000), siPrefix=True,
             tip = 'How many times to repeat the quadrature measurement at each step after settling.')
 
-        s.add_parameter('Output/DAC', 0, int=True, bounds=(-4095,4095),
-            tip = 'Sweep stop frequency.')
-        
         # Force to 0
         s.block_key_signals('Output/DAC')
         s.set_value('Output/DAC', 0)
@@ -350,6 +342,7 @@ class pid_controller():
                 self.settings.set_value('Loop Parameters/Integral time'  , I)
                 self.settings.set_value('Loop Parameters/Derivative time', D)
                 self.settings.set_value('Loop Parameters/Control Period' , period)
+                self.settings.set_value('Output/Temperature Setpoint'    , S)
                 
                 # Force to DAC 0
                 self.settings.block_key_signals('Output/DAC')
@@ -379,8 +372,9 @@ class pid_controller():
             # Change the button color to indicate we are connected
             self.button_connect.set_text('Disconnect').set_colors(background = 'blue')
             
-            # Clear the plot of any previous data
-            self.plot_main.clear()
+            # Clear the plots of any previous data
+            self.plot_main .clear()
+            self.plot_debug.clear()
             
             # Print Arduino sketch version for reference 
             self.label_status.set_text(self.api.get_version())  
@@ -393,6 +387,11 @@ class pid_controller():
             
             # Disconnect the API
             self.api.disconnect()
+            
+            # Reset Loop control to open loop
+            self.button_loop_control.block_signals()
+            self.button_loop_control.set_colors(text = 'orange').set_text('Open\nLoop')
+            self.button_loop_control.unblock_signals()
             
             #
             self.button_connect.set_text('Connect').set_colors()
@@ -420,7 +419,6 @@ class pid_controller():
         band = self.settings['Loop Parameters/Band']
         t_i  = self.settings['Loop Parameters/Integral time']
         t_d  = self.settings['Loop Parameters/Derivative time']
-        print(band)
         
         self.api.set_parameters(band, t_i, t_d)
          
@@ -436,7 +434,6 @@ class pid_controller():
         
     def _number_dac_changed(self):
         self.api.set_dac(self.settings['Output/DAC'])
-            
         
     def _number_setpoint_changed(self):
         self.api.set_temperature_setpoint(self.settings['Output/Temperature Setpoint'])
@@ -448,7 +445,7 @@ class pid_controller():
         
         """
         
-        t, T, S, dac_level, period = self.api.get_all_variables()
+        t, T, S, dac_level, period, _u1, _u2, _u3 = self.api.get_all_variables()
     
         # Update the temperature, dac voltage, and setpoint
         self.number_temperature.set_value(T)
@@ -457,9 +454,11 @@ class pid_controller():
 
         # Append this to the databox
         self.plot_main .append_row([t/1000, T, T-S, 100*dac_level/4095], ckeys=['Time (s)', 'Temperature (C)', 'Temperature Error (C)', 'DAC Voltage (%)'])
+        self.plot_debug.append_row([t/1000, _u1, _u2, _u3], ckeys = ['Time(s)','u1','u2','u3'])
         
         # Update the plot
-        self.plot_main.plot()
+        self.plot_main .plot()
+        self.plot_debug.plot()
 
         # Update GUI
         self.window.process_events()
@@ -469,6 +468,51 @@ class pid_controller():
         Returns the actual port string from the combo box.
         """
         return self._ports[self.combo_ports.get_index()]
+    
+    def _ports_changed(self):
+        """
+        Refreshes the list of availible serial ports in the GUI.
+        """
+        if self.get_selected_port() == 'Refresh - Update Ports List':
+            
+            len_ports = len(self.combo_ports.get_all_items())
+            
+            # Clear existing ports
+            if(len_ports > 1): # Stop recursion!
+                for n in range(len_ports):
+                    self.combo_ports.remove_item(0)
+            else:
+                return
+                self.combo_ports.remove_item(0)
+                 
+            self._ports = [] # Actual port names for connecting
+            ports       = [] # Pretty port names for combo box
+                
+            default_port = 0
+             
+            # Get all the available ports
+            if _comports:
+                for inx, p in enumerate(_comports()):
+                    self._ports.append(p.device)
+                    ports      .append(p.description)
+                    
+                    if 'Arduino' in p.description:
+                        default_port = inx
+                        
+            # Append simulation port
+            ports      .append('Simulation')
+            self._ports.append('Simulation')
+            
+            # Append refresh port
+            ports      .append('Refresh - Update Ports List')
+            self._ports.append('Refresh - Update Ports List')
+             
+            # Add the new list of ports
+            for item in ports:
+                self.combo_ports.add_item(item)
+             
+            # Set the new default port
+            self.combo_ports.set_index(default_port)
         
     def _new_exception(self, a):
         """
