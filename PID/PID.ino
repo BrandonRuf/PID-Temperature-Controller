@@ -7,11 +7,11 @@
  * or API <pid_controller_api.py>. 
  * 
  * For use in the McGill University physics course PHYS-339.
- * Written by Brandon Ruffolo in 2021-22.
+ * Written by Brandon Ruffolo in 2021-23.
  * Email: brandon.ruffolo@mcgill.ca
 */
 
-#define SKETCH_VERSION "0.0.9"
+#define SKETCH_VERSION "1.0.0"
 
 
 /* Imports */
