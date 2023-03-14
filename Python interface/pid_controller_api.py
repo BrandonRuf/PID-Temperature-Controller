@@ -3,7 +3,7 @@
 serial communication to an Arduino microcontroller running <PID.ino>.
 
 For use in the McGill University physics course PHYS-339.
-Written by Brandon Ruffolo in 2021-22.
+Written by Brandon Ruffolo in 2022-23.
 Email: brandon.ruffolo@mcgill.ca
 '''
 
@@ -303,23 +303,6 @@ class pid_api():
     def get_all_variables(self):
         """
         Get all arduino parameters in one shot.
-
-        Returns
-        -------
-        _temp : float
-            DESCRIPTION.
-        _setpoint : float
-            DESCRIPTION.
-        _dac : int
-            DESCRIPTION.
-        _band : float
-            DESCRIPTION.
-        _ti : float
-            DESCRIPTION.
-        _td : float
-            DESCRIPTION.
-        _period : int
-            DESCRIPTION.
 
         """
         self.write('get_all')

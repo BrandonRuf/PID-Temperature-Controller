@@ -1,3 +1,13 @@
+'''
+<pid_controller.py> is a GUI for interacting with the PHYS 339 
+Arduino PID setup. It wraps an API <pid_controller_api.py> which handles 
+the serial communication with the Arduino. Remember the Cant.
+
+For use in the McGill University physics course PHYS-339.
+Written by Brandon Ruffolo in 2022-23.
+Email: brandon.ruffolo@mcgill.ca
+'''
+
 import spinmob.egg as _egg
 import traceback   as _traceback
 import spinmob     as _s
@@ -16,14 +26,14 @@ _g = _egg.gui
 # Dark theme
 _s.settings['dark_theme_qt'] = True
 
-try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID( u'Arduino PID')
+try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID( u'PHYS 339 PID')
 except Exception: 
         pass
     
 
 class pid_controller():
     
-    def __init__(self, name='Arduino PID', api_class = pid_api, temperature_limit=80, show=True, block=False, window_size=[900,650]):
+    def __init__(self, name='PHYS 339 PID', api_class = pid_api, temperature_limit=80, show=True, block=False, window_size=[900,650]):
         
         w = self.window = _g.Window(name, size = window_size, autosettings_path=name+'_window.txt')
         w.set_size(window_size)
@@ -191,32 +201,32 @@ class pid_controller():
         s = self.settings
 
         s.add_parameter('Output/DAC', 0, int=True, bounds=(-4095,4095),
-            tip = 'Sweep stop frequency.')
+            tip = 'Output value of the 12-bit DAC (MCP4725). Range is [-4095,4095].')
         
         s.add_parameter('Loop Parameters/Band', 10.01, dec=True, decimals = 5, bounds = (0,None),
             suffix = '°C', siPrefix = True,
-            tip = 'How long to settle after changing the frequency.').set_style('font-size: 10pt; font-weight: bold; color: white').set_width(300)
+            tip = '').set_style('font-size: 10pt; font-weight: bold; color: white').set_width(300)
 
         s.add_parameter('Loop Parameters/Integral time', 0.12, dec=True, decimals = 5,  bounds = (0,None),
             suffix = 's', siPrefix = True,
-            tip = 'Minimum amount of data to collect (will be an integer number of periods).')
+            tip = '')
         
         s.add_parameter('Loop Parameters/Derivative time', 53.03, dec=True, decimals = 5,
             suffix='s', siPrefix=True, bounds=(0,None),
-            tip = 'Maximum allowed input samples (to avoid very long runs, e.g.).')
+            tip = '')
         
         s.add_parameter('Loop Parameters/Control Period', 1.0, dec=True,
             suffix='ms', bounds=(20,10000), siPrefix=True,
-            tip = 'How many times to repeat the quadrature measurement at each step after settling.')
+            tip = '')
 
         # Force to 0
         s.block_key_signals('Output/DAC')
         s.set_value('Output/DAC', 0)
         s.unblock_key_signals('Output/DAC')
         
-        s.add_parameter('Output/Temperature Setpoint', 24.5, bounds = (-30,80), decimals = 5,
+        s.add_parameter('Output/Temperature Setpoint', 24.5, bounds = (-20,72), decimals = 5,
                         suffix = '°C',
-                        tip = 'Sweep stop frequency.')
+                        tip = 'Setpoint temperature of the control loop. Enter any temperature in the range [-20,72] °C.')
         
         s.connect_signal_changed('Loop Parameters/Band'           , self.loop_parameter_changed)
         s.connect_signal_changed('Loop Parameters/Integral time'  , self.loop_parameter_changed)
