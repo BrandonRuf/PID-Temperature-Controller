@@ -191,7 +191,7 @@ class pid_controller():
         #self.button_folder._widget.setIcon(QtGui.QIcon('Images/OpenFolder.png')) 
 
         self.plot_debug = self.tab_debug.add(_g.DataboxPlot(
-            file_type         = '*.quad',
+            file_type         = '*.debug',
             autosettings_path = name+'.plot_quadratures',
             name              = name+'.plot_quadratures',
             autoscript        = 1), alignment=0, column_span=3)
